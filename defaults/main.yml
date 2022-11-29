@@ -1,0 +1,16 @@
+---
+# defaults file for keycloak
+
+keycloak_install_dir: /opt/keycloak
+
+keycloak_service_user: keycloak
+
+# DB Settings (https://www.keycloak.org/server/all-config#_database)
+# keycloak_database_vendor: postgres
+# keycloak_database_user:
+# keycloak_database_password:
+# keycloak_database_name:
+keycloak_database_host: localhost
+
+# HTTPS Port (https://www.keycloak.org/server/all-config#_httptls)
+keycloak_https_port: 8443

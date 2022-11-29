@@ -1,0 +1,31 @@
+[Unit]
+Description=Keycloak Identity and Access manager
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start --optimized
+WorkingDirectory={{ keycloak_release_folder }}
+SuccessExitStatus=143
+
+User=keycloak
+Group=keycloak
+
+PrivateUsers=true
+
+StandardOutput=journal
+StandardError=journal
+
+{% if ansible_systemd_version | int >= 247 and keycloak_cert_file is defined and keycloak_key_file is defined %}
+LoadCredential=cert.pem:{{ keycloak_cert_file }}
+LoadCredential=key.pem:{{ keycloak_key_file }}
+Environment=KC_HTTPS_CERTIFICATE_FILE=%d/cert.pem
+Environment=KC_HTTPS_CERTIFICATE_KEY_FILE=%d/key.pem
+{% endif %}
+{% if not keycloak_initialized %}
+Environment=KEYCLOAK_ADMIN={{ keycloak_admin_username }}
+Environment=KEYCLOAK_ADMIN_PASSWORD={{ keycloak_admin_password }}
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target
