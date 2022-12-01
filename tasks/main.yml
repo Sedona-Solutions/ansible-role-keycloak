@@ -100,7 +100,7 @@
     path: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}"
   register: release_folder
   become: true
-  become_user: keycloak
+  become_user: "{{ keycloak_service_user }}"
 
 - name: "Check presence of keystore"
   ansible.builtin.stat:
@@ -110,7 +110,7 @@
 - name: "Build Keycloak configuration"
   when: release_folder.stat.exists
   become: true
-  become_user: keycloak
+  become_user: "{{ keycloak_service_user }}"
   block:
     - name: Set Keycloak release folder
       ansible.builtin.set_fact:
