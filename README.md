@@ -68,18 +68,28 @@ None
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+```yaml
+- hosts: all
+  roles:
+    - role: sedona_solutions.keycloak
+      vars:
+        keycloak_version: 20.0.1
+        keycloak_keystore_file: /etc/keycloak/keycloak.jks
+        keycloak_keystore_password: changeme
+        keycloak_hostname: keycloak.example.com
+        keycloak_database_host: localhost
+        keycloak_database_vendor: postgres
+        keycloak_database_user: db_user
+        keycloak_database_password: db_password
+        keycloak_database_name: keycloak_db
+```
 
 License
 -------
 
-BSD
+MIT / BSD
 
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+This role was created in 2022 by [Sébastien Collado](https://github.com/scollado) for [Sedona Solutions](https://github.com/Sedona-Solutions).
