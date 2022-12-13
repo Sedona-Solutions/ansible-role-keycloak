@@ -6,7 +6,10 @@ An Ansible Role that installs et configure [Keycloak](https://www.keycloak.org/)
 Requirements
 ------------
 
-You need at least OpenJDK 11 or newer installed before running this role. To ensure it's installed, you can use the `geerlingguy.java` role for example.
+You need:
+ - At least OpenJDK 11 or newer installed before running this role. To ensure it's installed, you can use the `geerlingguy.java` role for example.
+ - The `sudo` command and a user allowed to use it (or `root` user)
+
 To [run Keycloak in production](https://www.keycloak.org/server/configuration-production), you'll need:
  - A [supported database](https://www.keycloak.org/server/db)
  - A valid [hostname](https://www.keycloak.org/server/configuration-production)
