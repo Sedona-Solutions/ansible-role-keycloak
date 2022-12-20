@@ -10,7 +10,7 @@ You need:
  - At least OpenJDK 11 or newer installed before running this role. To ensure it's installed, you can use the `geerlingguy.java` role for example.
  - The `sudo` command and a user allowed to use it (or `root` user)
 
-To [run Keycloak in production](https://www.keycloak.org/server/configuration-production), you'll need:
+And requirements to [run Keycloak in production](https://www.keycloak.org/server/configuration-production):
  - A [supported database](https://www.keycloak.org/server/db)
  - A valid [hostname](https://www.keycloak.org/server/configuration-production)
  - [HTTPS/TLS certificates](https://www.keycloak.org/server/db) provided in PEM format or in a Java Keystore
@@ -20,7 +20,7 @@ Role Variables
 
 Available variables are listed below, along with default values (see `defaults/main.yml`):
 
-    keycloak_version: 20.0.1
+    keycloak_version: 20.0.2
 
 The version of Keycloak to install on the system. If not defined, we try to find the latest release on GitHub API.
 

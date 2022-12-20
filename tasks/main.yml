@@ -177,6 +177,7 @@
         owner: "{{ keycloak_service_user }}"
         group: "{{ keycloak_service_user }}"
         mode: '0660'
+        marker: "### {mark} HOST ANSIBLE MANAGED BLOCK ###"
         block: |
           hostname={{ keycloak_hostname }}
           https-port={{ keycloak_https_port }}
@@ -200,6 +201,7 @@
             owner: "{{ keycloak_service_user }}"
             group: "{{ keycloak_service_user }}"
             mode: '0660'
+            marker: "### {mark} TLS ANSIBLE MANAGED BLOCK ###"
             block: |
               # HTTPS / TLS keystore
               https-key-store-file={{ keycloak_keystore_file }}
