@@ -35,6 +35,10 @@ galaxy_info:
         - 20.04
         - 22.04
         - 22.10
+    - name: Debian
+      version:
+        - 11
+        - 10
 
   galaxy_tags:
     - system

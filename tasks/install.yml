@@ -1,0 +1,54 @@
+---
+- name: "Create Keycloak user"
+  ansible.builtin.user:
+    name: keycloak
+    system: true
+    home: "{{ keycloak_install_dir }}"
+    create_home: true
+    state: present
+    shell: /bin/nologin
+  become: true
+
+- name: "Download and install Keycloak {{ keycloak_version }}"
+  when: not release_folder.stat.exists
+  block:
+    - name: "Define Keycloak release URL"
+      ansible.builtin.set_fact:
+        keycloak_release_download_url: "https://github.com/keycloak/keycloak/releases/download/{{ keycloak_version }}/keycloak-{{ keycloak_version }}.tar.gz"
+
+    - name: "Obtain release archive checksum"
+      ansible.builtin.uri:
+        url: "{{ keycloak_release_download_url }}.sha1"
+        return_content: true
+      register: keycloak_release_checksum_file
+
+    - name: "Download Keycloack archive"
+      ansible.builtin.get_url:
+        url: "{{ keycloak_release_download_url }}"
+        dest: "/tmp/keycloak-{{ keycloak_version }}.tar.gz"
+        checksum: "sha1:{{ keycloak_release_checksum_file.content }}"
+        mode: '0444'
+
+    - name: "Ensure install dir exists"
+      ansible.builtin.file:
+        path: "{{ keycloak_install_dir }}"
+        state: directory
+        mode: '0775'
+        owner: "{{ keycloak_service_user }}"
+        group: "{{ keycloak_service_user }}"
+      become: true
+
+    - name: "Extract archive"
+      ansible.builtin.unarchive:
+        src: "/tmp/keycloak-{{ keycloak_version }}.tar.gz"
+        dest: "{{ keycloak_install_dir }}"
+        remote_src: true
+      become: true
+      become_user: keycloak
+
+  rescue:
+    - name: Cleanup folder to allow new installation
+      ansible.builtin.file:
+        path: release_folder.stat.path
+        state: absent
+      become: true

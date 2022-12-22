@@ -1,0 +1,51 @@
+---
+# Check pre-requirements
+- name: Test if ansible_user has root capabilities (sudo or equivalent)
+  become: true
+  ansible.builtin.command: id -u
+  register: id_output
+
+- name: Validate ansible_user root capabilities
+  ansible.builtin.assert:
+    that: id_output.stdout == '0'
+
+- name: "Check version of systemd"
+  become: true
+  ansible.builtin.shell: |
+    set -o pipefail
+    systemctl --version | head -n1 | cut -d ' ' -f 2
+  args:
+    executable: /usr/bin/bash
+  register: systemd_version_cmd
+  changed_when: true
+
+- name: "Retrieve last Keycloak version"
+  when: keycloak_version is not defined
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/keycloak/keycloak/releases/latest"
+    return_content: true
+  register: github_response
+
+- name: "Set Keycloak version"
+  when: keycloak_version is not defined
+  ansible.builtin.set_fact:
+    keycloak_version: "{{ github_response.json.name }}"
+
+- name: "Set systemd version"
+  ansible.builtin.set_fact:
+    ansible_systemd_version: "{{ systemd_version_cmd.stdout | int }}"
+
+- name: "Ensure required utilities are installed"
+  ansible.builtin.package:
+    name:
+      - acl
+      - gzip
+      - tar
+    state: present
+  become: true
+
+- name: "Check presence of Keycloak {{ keycloak_version }}"
+  ansible.builtin.stat:
+    path: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}"
+  register: release_folder
+  become: true

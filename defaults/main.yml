@@ -14,3 +14,5 @@ keycloak_database_host: localhost
 
 # HTTPS Port (https://www.keycloak.org/server/all-config#_httptls)
 keycloak_https_port: 8443
+
+keycloak_dev_mode: true

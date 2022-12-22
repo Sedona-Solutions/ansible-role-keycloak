@@ -4,7 +4,11 @@ After=syslog.target network.target
 
 [Service]
 Type=simple
+{% if keycloak_dev_mode %}
+ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start-dev
+{% else %}
 ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start --optimized
+{% endif %}
 WorkingDirectory={{ keycloak_release_folder }}
 SuccessExitStatus=143
 
