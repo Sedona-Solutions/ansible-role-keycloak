@@ -5,7 +5,7 @@
     - precheck
 
 - name: "Installs Keycloak"
-  ansible.builtin.include_tasks: user.yml
+  ansible.builtin.include_tasks: install.yml
   tags:
     - install
 
