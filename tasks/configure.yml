@@ -187,7 +187,7 @@
 
         - name: "Wait until Keycloak becomes active"
           ansible.builtin.uri:
-            url: "{{ https://localhost:{{ keycloak_https_port }}/health/ready"
+            url: "https://localhost:{{ keycloak_https_port }}/health/ready"
           register: keycloak_status
           until: keycloak_status.status == 200 and keycloak_status.json.status == "UP"
           retries: 25
