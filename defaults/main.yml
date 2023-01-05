@@ -1,6 +1,8 @@
 ---
 # defaults file for keycloak
 
+keycloak_force_init: false
+
 keycloak_install_dir: /opt/keycloak
 
 keycloak_service_user: keycloak
@@ -12,7 +14,15 @@ keycloak_service_user: keycloak
 # keycloak_database_name:
 keycloak_database_host: localhost
 
-# HTTPS Port (https://www.keycloak.org/server/all-config#_httptls)
+# HTTP & HTTPS Port (https://www.keycloak.org/server/all-config#_httptls)
+keycloak_http_port: 8080
 keycloak_https_port: 8443
 
+# Start keycloak in dev mode (start-dev)
 keycloak_dev_mode: true
+
+# Enable /health endpoint
+keycloak_health_enabled: true
+
+# How TLS certificate is provided : keystore or pem
+keycloak_tls_certificate_format: keystore

@@ -1,0 +1,52 @@
+---
+- name: "Check version of systemd"
+  become: true
+  ansible.builtin.shell: |
+    set -o pipefail
+    systemctl --version | head -n1 | cut -d ' ' -f 2
+  args:
+    executable: /usr/bin/bash
+  register: systemd_version_cmd
+  changed_when: true
+
+- name: "Set systemd version"
+  ansible.builtin.set_fact:
+    ansible_systemd_version: "{{ systemd_version_cmd.stdout | int }}"
+
+- name: "Copy SSL Certificate and Key for system without systemd ≥ 247"
+  become: true
+  become_user: root
+  when: ansible_systemd_version | int < 247
+  ansible.builtin.copy:
+    remote_src: true
+    src: "{{ item.0 }}"
+    dest: "{{ item.1 }}"
+    mode: "{{ item.2 }}"
+    owner: "{{ keycloak_service_user }}"
+    group: "{{ keycloak_service_user }}"
+  loop: "{{ files }}"
+  vars:
+    files:
+      - [ "{{ keycloak_cert_file }}", "{{ keycloak_config_folder }}/server.crt", '0660' ]
+      - [ "{{ keycloak_key_file }}", "{{ keycloak_config_folder }}/server.key", '0600' ]
+
+- name: "Setup Certificate & Key for HTTPS (systemd < 247)"
+  when: ansible_systemd_version | int < 247
+  ansible.builtin.lineinfile:
+    path: "{{ keycloak_config_folder }}/keycloak.conf"
+    state: present
+    owner: "{{ keycloak_service_user }}"
+    group: "{{ keycloak_service_user }}"
+    mode: '0660'
+    line: "{{ item.line }}"
+    insertafter: "{{ item.insertafter }}"
+    regexp: "{{ item.regexp }}"
+  loop: "{{ cert_params }}"
+  vars:
+    cert_params:
+      - line: "https-certificate-file=${kc.home.dir}conf/server.crt"
+        insertafter: '#https-certificate-file=${kc.home.dir}conf/server.crt.pem'
+        regexp: '^https-certificate-file=.*'
+      - line: "https-certificate-key-file=${kc.home.dir}conf/server.key"
+        insertafter: '#https-certificate-key-file=${kc.home.dir}conf/server.key.pem'
+        regexp: '^https-certificate-key-file=.*'

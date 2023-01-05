@@ -14,11 +14,6 @@
   ansible.builtin.set_fact:
     keycloak_config_folder: "{{ keycloak_release_folder }}/conf"
 
-- name: "Check presence of keystore"
-  ansible.builtin.stat:
-    path: "{{ keycloak_keystore_file }}"
-  register: keystore_file
-
 - name: "Check presence of init file"
   ansible.builtin.stat:
     path: "{{ keycloak_install_dir }}/.init_done"
@@ -75,93 +70,81 @@
             regexp: '^db-url-host=.*'
 
     - name: "Define Keycloak network parameters"
-      ansible.builtin.blockinfile:
-        path: "{{ keycloak_config_folder }}/keycloak.conf"
-        state: present
-        owner: "{{ keycloak_service_user }}"
-        group: "{{ keycloak_service_user }}"
-        mode: '0660'
-        marker: "### {mark} HOST ANSIBLE MANAGED BLOCK ###"
-        block: |
-          hostname={{ keycloak_hostname }}
-          https-port={{ keycloak_https_port }}
-        insertafter: '#hostname=myhostname'
-
-    - name: "Setup TLS with certificate in keystore"
-      when: keystore_file.stat.exists
       block:
-        - name: "Ensure correct permissions on keystore"
-          become: true
-          become_user: root
-          ansible.builtin.file:
-            path: "{{ keycloak_keystore_file }}"
-            owner: "{{ keycloak_service_user }}"
-            group: "{{ keycloak_service_user }}"
-            mode: '0660'
+        - name: "Defaults admin hostname to Keycloak frontend hostname"
+          when: keycloak_admin_hostname is not defined
+          ansible.builtin.set_fact:
+            keycloak_admin_hostname: "{{ keycloak_hostname }}"
 
-        - name: "Add keystore-related parameters in Keycloak config"
+        - name: "Define hostnames"
           ansible.builtin.blockinfile:
             path: "{{ keycloak_config_folder }}/keycloak.conf"
             state: present
             owner: "{{ keycloak_service_user }}"
             group: "{{ keycloak_service_user }}"
             mode: '0660'
-            marker: "### {mark} TLS ANSIBLE MANAGED BLOCK ###"
+            marker: '### {mark} HOST ANSIBLE MANAGED BLOCK ###'
             block: |
-              # HTTPS / TLS keystore
-              https-key-store-file={{ keycloak_keystore_file }}
-              https-key-store-password={{ keycloak_keystore_passphrase }}
+              hostname={{ keycloak_hostname }}
+              hostname-admin={{ keycloak_admin_hostname }}
+            insertafter: '#hostname=myhostname'
 
-    - name: "Setup TLS with certificate & private key"
-      when: not keystore_file.stat.exists
-      block:
-        - name: "Copy SSL Certificate and Key for system without systemd ≥ 247"
-          become: true
-          become_user: root
-          when: ansible_systemd_version | int < 247
-          ansible.builtin.copy:
-            remote_src: true
-            src: "{{ item.0 }}"
-            dest: "{{ item.1 }}"
-            mode: "{{ item.2 }}"
-            owner: "{{ keycloak_service_user }}"
-            group: "{{ keycloak_service_user }}"
-          loop: "{{ files }}"
-          vars:
-            files:
-              - [ "{{ keycloak_cert_file }}", "{{ keycloak_config_folder }}/server.crt", '0660' ]
-              - [ "{{ keycloak_key_file }}", "{{ keycloak_config_folder }}/server.key", '0600' ]
-
-        - name: "Setup Certificate & Key for HTTPS (systemd < 247)"
-          when: ansible_systemd_version | int < 247
+        - name: "Set proxy mode"
+          when: keycloak_proxy_mode is defined
           ansible.builtin.lineinfile:
             path: "{{ keycloak_config_folder }}/keycloak.conf"
             state: present
             owner: "{{ keycloak_service_user }}"
             group: "{{ keycloak_service_user }}"
             mode: '0660'
-            line: "{{ item.line }}"
-            insertafter: "{{ item.insertafter }}"
-            regexp: "{{ item.regexp }}"
-          loop: "{{ cert_params }}"
-          vars:
-            cert_params:
-              - line: "https-certificate-file=${kc.home.dir}conf/server.crt"
-                insertafter: '#https-certificate-file=${kc.home.dir}conf/server.crt.pem'
-                regexp: '^https-certificate-file=.*'
-              - line: "https-certificate-key-file=${kc.home.dir}conf/server.key"
-                insertafter: '#https-certificate-key-file=${kc.home.dir}conf/server.key.pem'
-                regexp: '^https-certificate-key-file=.*'
+            regexp: '^proxy=.*'
+            line: "proxy={{ keycloak_proxy_mode }}"
+            insertafter: '#proxy=reencrypt'
+
+        - name: "Unset proxy mode if not defined"
+          when: keycloak_proxy_mode is not defined
+          ansible.builtin.lineinfile:
+            path: "{{ keycloak_config_folder }}/keycloak.conf"
+            state: absent
+            owner: "{{ keycloak_service_user }}"
+            group: "{{ keycloak_service_user }}"
+            mode: '0660'
+            regexp: '^proxy=.*'
+        
+        - name: "Enable Health endpoint"
+          when: keycloak_health_enabled is defined and keycloak_health_enabled
+          ansible.builtin.lineinfile:
+            path: "{{ keycloak_config_folder }}/keycloak.conf"
+            state: present
+            owner: "{{ keycloak_service_user }}"
+            group: "{{ keycloak_service_user }}"
+            mode: '0660'
+            regexp: '^health-enabled=.*'
+            line: "health-enabled=true"
+            insertafter: '#health-enabled=true'
+
+        - name: "Disable health endpoint"
+          when: keycloak_health_enabled is not defined or not keycloak_health_enabled
+          ansible.builtin.lineinfile:
+            path: "{{ keycloak_config_folder }}/keycloak.conf"
+            state: absent
+            owner: "{{ keycloak_service_user }}"
+            group: "{{ keycloak_service_user }}"
+            mode: '0660'
+            regexp: '^health-enabled=.*'
+
+    - name: "Setup TLS"
+      ansible.builtin.include_tasks: "tls/tls_{{ keycloak_tls_certificate_format }}.yml"
 
     - name: "Set Keycloak build command"
       ansible.builtin.set_fact:
         keycloak_build_command: >
           bin/kc.sh build
           --db={{ keycloak_database_vendor }} 
-          --cache=local 
-          --health-enabled=true
+          --cache=local
 
     - name: "Build optimized Keycloak distribution"
+      when: not keycloak_dev_mode
       ansible.builtin.command: "{{ keycloak_build_command }}"
       args:
         chdir: "{{ keycloak_release_folder }}"
@@ -171,7 +154,7 @@
     - name: "Initialize keycloak"
       become: true
       become_user: root
-      when: not keycloak_initialized
+      when: not keycloak_initialized or keycloak_force_init
       block:
         - name: "Install initial SystemD service definition"
           ansible.builtin.template:
@@ -182,12 +165,13 @@
         - name: "Start Keycloak to init admin user"
           ansible.builtin.systemd:
             name: keycloak.service
-            state: started
+            state: restarted
             daemon_reload: true
 
         - name: "Wait until Keycloak becomes active"
           ansible.builtin.uri:
             url: "https://localhost:{{ keycloak_https_port }}/health/ready"
+            validate_certs: false
           register: keycloak_status
           until: keycloak_status.status == 200 and keycloak_status.json.status == "UP"
           retries: 25
