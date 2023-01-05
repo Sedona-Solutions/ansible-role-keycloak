@@ -65,9 +65,47 @@
           - line: "db-url-database={{ keycloak_database_name }}"
             insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
             regexp: '^db-url-database=.*'
-          - line: "db-url-host=localhost"
-            insertafter: 'db-url-database={{ keycloak_database_name }}'
+          - line: "db-url-host={{ keycloak_database_host }}"
+            insertafter: 'db-url-database={{ keycloak_database_host }}'
             regexp: '^db-url-host=.*'
+
+    - name: "Define Keycloak Database extended parameters"
+      block:
+        - name: "Define database port"
+          when: keycloak_database_port is defined
+          ansible.builtin.lineinfile:
+            path: "{{ keycloak_config_folder }}/keycloak.conf"
+            state: present
+            owner: "{{ keycloak_service_user }}"
+            group: "{{ keycloak_service_user }}"
+            mode: '0660'
+            line: "db-schema={{ keycloak_database_schema }}"
+            insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
+            regexp: "^db-schema=.*"
+
+        - name: "Define database port"
+          when: keycloak_database_port is defined
+          ansible.builtin.lineinfile:
+            path: "{{ keycloak_config_folder }}/keycloak.conf"
+            state: present
+            owner: "{{ keycloak_service_user }}"
+            group: "{{ keycloak_service_user }}"
+            mode: '0660'
+            line: "db-url-port={{ keycloak_database_port }}"
+            insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
+            regexp: "^db-url-port=.*"
+
+        - name: "Define database special properties"
+          when: keycloak_database_properties is defined
+          ansible.builtin.lineinfile:
+            path: "{{ keycloak_config_folder }}/keycloak.conf"
+            state: present
+            owner: "{{ keycloak_service_user }}"
+            group: "{{ keycloak_service_user }}"
+            mode: '0660'
+            line: "db-url-properties{{ keycloak_database_properties }}"
+            insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
+            regexp: "^db-url-properties=.*"
 
     - name: "Define Keycloak network parameters"
       block:

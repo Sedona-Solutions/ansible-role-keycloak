@@ -64,13 +64,19 @@ Please note that for now, there's no way to provide a passphrase for the key to 
 
 The system user/group name who will be running Keycloak. The role will automatically create & set up the user account if necessary.
 
-    keycloak_database_host: localhost
     keycloak_database_vendor: postgres
+    keycloak_database_host: localhost
     keycloak_database_user: db_user
     keycloak_database_password: db_password
     keycloak_database_name: keycloak_db
 
 Settings for the database to use with Keycloak. See [Keycloak documentation](https://www.keycloak.org/server/all-config#_database) for details on allowed values.
+
+    keycloak_database_schema: kc_schema
+    keycloak_database_port: 1234
+    keycloak_database_properties: "myProperty1=value1;otherProperty=value2"
+
+Optional parameters for JDBC connection URL.
 
     keycloak_dev_mode: true
 
