@@ -5,15 +5,30 @@ After=syslog.target network.target
 [Service]
 Type=simple
 {% if keycloak_dev_mode %}
-ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start-dev
+ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start-dev {% if not keycloak_initialized %} --http-enabled=true{% endif %}
 {% else %}
-ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start --optimized
+ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start --optimized  {% if not keycloak_initialized %} --http-enabled=true{% endif %}
 {% endif %}
-WorkingDirectory={{ keycloak_release_folder }}
-SuccessExitStatus=143
 
-User=keycloak
-Group=keycloak
+WorkingDirectory={{ keycloak_release_folder }}
+
+Restart=on-failure
+RestartSec=2s
+# Disable timeout logic and wait until process is stopped
+TimeoutStopSec=0
+# SIGTERM signal is used to stop the Java process
+KillSignal=SIGTERM
+# Send the signal only to the JVM rather than its control group
+KillMode=process
+# Java process is never killed
+SendSIGKILL=no
+# When a JVM receives a SIGTERM signal it exits with code 143
+SuccessExitStatus=143
+LimitMEMLOCK=infinity
+LimitNOFILE=65535
+
+User={{ keycloak_service_user }}
+Group={{ keycloak_service_user }}
 
 PrivateUsers=true
 

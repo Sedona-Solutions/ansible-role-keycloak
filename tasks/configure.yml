@@ -72,7 +72,7 @@
     - name: "Define Keycloak Database extended parameters"
       block:
         - name: "Define database port"
-          when: keycloak_database_port is defined
+          when: keycloak_database_schema is defined
           ansible.builtin.lineinfile:
             path: "{{ keycloak_config_folder }}/keycloak.conf"
             state: present
@@ -95,7 +95,7 @@
             insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
             regexp: "^db-url-port=.*"
 
-        - name: "Define database special properties"
+        - name: "Define database connection properties"
           when: keycloak_database_properties is defined
           ansible.builtin.lineinfile:
             path: "{{ keycloak_config_folder }}/keycloak.conf"
@@ -103,9 +103,31 @@
             owner: "{{ keycloak_service_user }}"
             group: "{{ keycloak_service_user }}"
             mode: '0660'
-            line: "db-url-properties{{ keycloak_database_properties }}"
+            line: "db-url-properties=;{{ keycloak_database_properties }}"
             insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
             regexp: "^db-url-properties=.*"
+
+        - name: "Disable database XA transaction support"
+          when: keycloak_database_xa_transaction_enabled is defined and not keycloak_database_xa_transaction_enabled
+          ansible.builtin.lineinfile:
+            path: "{{ keycloak_config_folder }}/keycloak.conf"
+            state: present
+            owner: "{{ keycloak_service_user }}"
+            group: "{{ keycloak_service_user }}"
+            mode: '0660'
+            line: "transaction-xa-enabled={{ keycloak_database_xa_transaction_enabled }}"
+            insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
+            regexp: "^transaction-xa-enabled=.*"
+
+        - name: "Enable database XA transaction support (default)"
+          when: keycloak_database_xa_transaction_enabled is not defined or keycloak_database_xa_transaction_enabled
+          ansible.builtin.lineinfile:
+            path: "{{ keycloak_config_folder }}/keycloak.conf"
+            state: absent
+            owner: "{{ keycloak_service_user }}"
+            group: "{{ keycloak_service_user }}"
+            mode: '0660'
+            regexp: "^transaction-xa-enabled=.*"
 
     - name: "Define Keycloak network parameters"
       block:
@@ -129,14 +151,17 @@
 
         - name: "Set proxy mode"
           when: keycloak_proxy_mode is defined
-          ansible.builtin.lineinfile:
+          ansible.builtin.blockinfile:
             path: "{{ keycloak_config_folder }}/keycloak.conf"
             state: present
             owner: "{{ keycloak_service_user }}"
             group: "{{ keycloak_service_user }}"
             mode: '0660'
-            regexp: '^proxy=.*'
-            line: "proxy={{ keycloak_proxy_mode }}"
+            marker: '### {mark} PROXY ANSIBLE MANAGED BLOCK ###'
+            block: |
+              proxy={{ keycloak_proxy_mode }}
+              hostname-strict=false
+              hostname-strict-backchannel=false
             insertafter: '#proxy=reencrypt'
 
         - name: "Unset proxy mode if not defined"
@@ -208,7 +233,7 @@
 
         - name: "Wait until Keycloak becomes active"
           ansible.builtin.uri:
-            url: "https://localhost:{{ keycloak_https_port }}/health/ready"
+            url: "http://localhost:{{ keycloak_http_port }}/health/ready"
             validate_certs: false
           register: keycloak_status
           until: keycloak_status.status == 200 and keycloak_status.json.status == "UP"
@@ -243,3 +268,12 @@
         state: restarted
         enabled: true
         daemon_reload: true
+
+    - name: "Wait until Keycloak becomes active"
+      ansible.builtin.uri:
+        url: "http://localhost:{{ keycloak_http_port }}/health/ready"
+        validate_certs: false
+      register: keycloak_status
+      until: keycloak_status.status == 200 and keycloak_status.json.status == "UP"
+      retries: 25
+      delay: 5

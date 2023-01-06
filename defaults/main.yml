@@ -14,6 +14,8 @@ keycloak_service_user: keycloak
 # keycloak_database_name:
 keycloak_database_host: localhost
 
+keycloak_database_xa_transaction_enabled: true
+
 # HTTP & HTTPS Port (https://www.keycloak.org/server/all-config#_httptls)
 keycloak_http_port: 8080
 keycloak_https_port: 8443
