@@ -1,8 +1,9 @@
 ---
-- name: "Copy SSL Certificate and Key for system without systemd ≥ 247"
+- name: "Copy SSL Certificate and Key (systemd < 247)"
   become: true
   become_user: root
   when: ansible_systemd_version | int < 247
+  notify: "Restart Keycloak"
   ansible.builtin.copy:
     remote_src: true
     src: "{{ item.0 }}"
@@ -18,6 +19,7 @@
 
 - name: "Setup Certificate & Key for HTTPS (systemd < 247)"
   when: ansible_systemd_version | int < 247
+  notify: "Restart Keycloak"
   ansible.builtin.lineinfile:
     path: "{{ keycloak_config_folder }}/keycloak.conf"
     state: present

@@ -1,2 +1,9 @@
 ---
 # handlers file for keycloak
+
+- name: "Restart Keycloak"
+  become: true
+  become_user: root
+  ansible.builtin.systemd:
+    name: keycloak.service
+    state: restarted

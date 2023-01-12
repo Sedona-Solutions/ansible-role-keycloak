@@ -41,6 +41,7 @@
         mode: '0770'
 
     - name: "Define Keycloak Database parameters"
+      notify: "Restart Keycloak"
       ansible.builtin.lineinfile:
         path: "{{ keycloak_config_folder }}/keycloak.conf"
         state: present
@@ -70,6 +71,7 @@
             regexp: '^db-url-host=.*'
 
     - name: "Define Keycloak Database extended parameters"
+      notify: "Restart Keycloak"
       block:
         - name: "Define database port"
           when: keycloak_database_schema is defined
@@ -130,6 +132,7 @@
             regexp: "^transaction-xa-enabled=.*"
 
     - name: "Define Keycloak network parameters"
+      notify: "Restart Keycloak"
       block:
         - name: "Defaults admin hostname to Keycloak frontend hostname"
           when: keycloak_admin_hostname is not defined
@@ -260,12 +263,11 @@
         dest: /lib/systemd/system/keycloak.service
         mode: '0644'
 
-    - name: "Restart Keycloak to apply service definition changes"
+    - name: "Enable Keycloak"
       become: true
       become_user: root
       ansible.builtin.systemd:
         name: keycloak.service
-        state: restarted
         enabled: true
         daemon_reload: true
 
