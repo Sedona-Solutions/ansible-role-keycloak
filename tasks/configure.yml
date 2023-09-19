@@ -14,6 +14,10 @@
   ansible.builtin.set_fact:
     keycloak_config_folder: "{{ keycloak_release_folder }}/conf"
 
+- name: Set Keycloak providers folder
+  ansible.builtin.set_fact:
+    keycloak_providers_folder: "{{ keycloak_release_folder }}/providers"
+
 - name: "Check presence of init file"
   ansible.builtin.stat:
     path: "{{ keycloak_install_dir }}/.init_done"
@@ -22,6 +26,16 @@
 - name: "Define if Keycloak has already been initialized"
   ansible.builtin.set_fact:
     keycloak_initialized: "{{ init_file.stat.exists }}"
+
+- name: "Deploy extensions files"
+  become: true
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ keycloak_providers_folder }}"
+    owner: "{{ keycloak_service_user }}"
+    group: "{{ keycloak_service_user }}"
+    mode: "0664"
+  loop: "{{ keycloak_extensions }}"
 
 - name: "Build Keycloak configuration"
   when: release_folder.stat.exists

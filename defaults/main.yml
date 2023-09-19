@@ -28,3 +28,6 @@ keycloak_health_enabled: true
 
 # How TLS certificate is provided : keystore or pem
 keycloak_tls_certificate_format: keystore
+
+# List of Keycloak Extension files to install
+keycloak_extensions: []
