@@ -285,6 +285,13 @@
         enabled: true
         daemon_reload: true
 
+    - name: "(Re)Start Keycloak"
+      become: true
+      become_user: root
+      ansible.builtin.systemd:
+        name: keycloak.service
+        state: restart
+
     - name: "Wait until Keycloak becomes active"
       ansible.builtin.uri:
         url: "http://localhost:{{ keycloak_http_port }}/health/ready"
