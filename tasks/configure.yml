@@ -290,7 +290,7 @@
       become_user: root
       ansible.builtin.systemd:
         name: keycloak.service
-        state: restart
+        state: restarted
 
     - name: "Wait until Keycloak becomes active"
       ansible.builtin.uri:
