@@ -190,7 +190,7 @@
             group: "{{ keycloak_service_user }}"
             mode: '0660'
             regexp: '^proxy=.*'
-        
+
         - name: "Enable Health endpoint"
           when: keycloak_health_enabled is defined and keycloak_health_enabled
           ansible.builtin.lineinfile:
@@ -214,13 +214,14 @@
             regexp: '^health-enabled=.*'
 
     - name: "Setup TLS"
+      when: keycloak_tls_enabled
       ansible.builtin.include_tasks: "tls/tls_{{ keycloak_tls_certificate_format }}.yml"
 
     - name: "Set Keycloak build command"
       ansible.builtin.set_fact:
         keycloak_build_command: >
           bin/kc.sh build
-          --db={{ keycloak_database_vendor }} 
+          --db={{ keycloak_database_vendor }}
           --cache=local
 
     - name: "Build optimized Keycloak distribution"

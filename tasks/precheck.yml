@@ -4,6 +4,7 @@
   become: true
   ansible.builtin.command: id -u
   register: id_output
+  changed_when: true
 
 - name: "Check version of systemd"
   become: true
@@ -51,13 +52,14 @@
   become: true
 
 - name: "Validate certificate format"
+  when: keycloak_tls_enabled
   ansible.builtin.assert:
     that:
       - keycloak_tls_certificate_format in ['keystore', 'pem']
     fail_msg: "'keycloak_tls_certificate_format' should be either 'keystore' or 'pem'"
 
 - name: "Ensure keystore parameters are defined"
-  when: keycloak_tls_certificate_format == 'keystore'
+  when: keycloak_tls_enabled and keycloak_tls_certificate_format == 'keystore'
   ansible.builtin.assert:
     that:
       - keycloak_keystore_file is defined

@@ -14,8 +14,8 @@
   loop: "{{ files }}"
   vars:
     files:
-      - [ "{{ keycloak_cert_file }}", "{{ keycloak_config_folder }}/server.crt", '0660' ]
-      - [ "{{ keycloak_key_file }}", "{{ keycloak_config_folder }}/server.key", '0600' ]
+      - ["{{ keycloak_cert_file }}", "{{ keycloak_config_folder }}/server.crt", '0660']
+      - ["{{ keycloak_key_file }}", "{{ keycloak_config_folder }}/server.key", '0600']
 
 - name: "Setup Certificate & Key for HTTPS (systemd < 247)"
   when: ansible_systemd_version | int < 247

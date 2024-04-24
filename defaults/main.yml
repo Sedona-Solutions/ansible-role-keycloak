@@ -26,6 +26,8 @@ keycloak_dev_mode: true
 # Enable /health endpoint
 keycloak_health_enabled: true
 
+# Enable Keycloak HTTPS
+keycloak_tls_enabled: false
 # How TLS certificate is provided : keystore or pem
 keycloak_tls_certificate_format: keystore
 
