@@ -1,7 +1,7 @@
 ---
 - name: "Create Keycloak user"
   ansible.builtin.user:
-    name: keycloak
+    name: "{{ keycloak_service_user }}"
     system: true
     home: "{{ keycloak_install_dir }}"
     create_home: true
