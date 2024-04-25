@@ -12,7 +12,7 @@
     set -o pipefail
     systemctl --version | head -n1 | cut -d ' ' -f 2
   args:
-    executable: /usr/bin/bash
+    executable: /bin/bash
   register: systemd_version_cmd
   changed_when: true
 
