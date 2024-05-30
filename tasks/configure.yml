@@ -235,7 +235,7 @@
     - name: "Initialize keycloak"
       become: true
       become_user: root
-      when: not keycloak_initialized or keycloak_force_init
+      when: (not keycloak_initialized) or keycloak_force_init
       block:
         - name: "Install initial SystemD service definition"
           ansible.builtin.template:
@@ -258,17 +258,18 @@
           retries: 25
           delay: 5
 
-        - name: "Set Keycloak as initialized"
-          ansible.builtin.set_fact:
-            keycloak_initialized: true
-
         - name: "Save initialization marker"
           become: true
           become_user: "{{ keycloak_service_user }}"
-          ansible.builtin.file:
-            path: "{{ keycloak_install_dir }}/.init_done"
-            state: touch
+          ansible.builtin.copy:
+            content: |
+              {{ ansible_date_time.iso8601_basic_short }}
+            dest: "{{ keycloak_install_dir }}/.init_done"
             mode: '0644'
+
+        - name: "Set Keycloak as initialized"
+          ansible.builtin.set_fact:
+            keycloak_initialized: true
 
     - name: "Install SystemD service definition without initialization parameters"
       become: true
