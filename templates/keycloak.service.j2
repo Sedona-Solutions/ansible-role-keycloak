@@ -7,7 +7,7 @@ Type=simple
 {% if keycloak_dev_mode %}
 ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start-dev {% if not keycloak_initialized %} --http-enabled=true{% endif %}
 {% else %}
-ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start --optimized  {% if not keycloak_initialized %} --http-enabled=true{% endif %}
+ExecStart=/usr/bin/bash {{ keycloak_release_folder }}/bin/kc.sh --verbose start --optimized {% if not keycloak_initialized %} --http-enabled=true{% endif %}
 {% endif %}
 
 WorkingDirectory={{ keycloak_release_folder }}
@@ -44,6 +44,14 @@ Environment=KC_HTTPS_CERTIFICATE_KEY_FILE=%d/key.pem
 {% if not keycloak_initialized %}
 Environment=KEYCLOAK_ADMIN={{ keycloak_admin_username }}
 Environment=KEYCLOAK_ADMIN_PASSWORD={{ keycloak_admin_password }}
+{% endif %}
+
+{% if keycloak_enabled_features | length > 0 %}
+Environment=KC_FEATURES={{ keycloak_enabled_features|join(',') }}
+{% endif %}
+
+{% if keycloak_disabled_features | length > 0 %}
+Environment=KC_FEATURES_DISABLED={{ keycloak_disabled_features|join(',') }}
 {% endif %}
 
 [Install]

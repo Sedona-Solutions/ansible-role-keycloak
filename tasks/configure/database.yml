@@ -1,0 +1,52 @@
+---
+- name: "Define Keycloak Database parameters"
+  notify: "Restart Keycloak"
+  ansible.builtin.lineinfile:
+    path: "{{ keycloak_config_folder }}/keycloak.conf"
+    state: present
+    owner: "{{ keycloak_service_user }}"
+    group: "{{ keycloak_service_user }}"
+    mode: '0660'
+    line: "{{ item.line }}"
+    insertafter: "{{ item.insertafter }}"
+    regexp: "{{ item.regexp }}"
+  loop: "{{ db_params }}"
+  vars:
+    db_params:
+      - line: "db={{ keycloak_database_vendor }}"
+        insertafter: '#db=postgres'
+        regexp: '^db=.*'
+      - line: "db-username={{ keycloak_database_user }}"
+        insertafter: '#db-username=keycloak'
+        regexp: '^db-username=.*'
+      - line: "db-password={{ keycloak_database_password }}"
+        insertafter: '#db-password=password'
+        regexp: '^db-password=.*'
+      - line: "db-url-database={{ keycloak_database_name }}"
+        insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
+        regexp: '^db-url-database=.*'
+      - line: "db-url-host={{ keycloak_database_host }}"
+        insertafter: 'db-url-database={{ keycloak_database_host }}'
+        regexp: '^db-url-host=.*'
+      - line: "db-schema={{ keycloak_database_schema }}"
+        insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
+        regexp: "^db-schema=.*"
+      - line: "db-url-port={{ keycloak_database_port }}"
+        insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
+        regexp: "^db-url-port=.*"
+      - line: "db-url-properties=;{{ keycloak_database_properties }}"
+        insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
+        regexp: "^db-url-properties=.*"
+      - line: "transaction-xa-enabled={{ keycloak_database_xa_transaction_enabled }}"
+        insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
+        regexp: "^transaction-xa-enabled=.*"
+
+- name: "Enable database XA transaction support (default)"
+  when: keycloak_database_xa_transaction_enabled is not defined or keycloak_database_xa_transaction_enabled
+  ansible.builtin.lineinfile:
+    path: "{{ keycloak_config_folder }}/keycloak.conf"
+    state: absent
+    owner: "{{ keycloak_service_user }}"
+    group: "{{ keycloak_service_user }}"
+    mode: '0660'
+    regexp: "^transaction-xa-enabled=.*"

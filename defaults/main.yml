@@ -33,3 +33,9 @@ keycloak_tls_certificate_format: keystore
 
 # List of Keycloak Extension files to install
 keycloak_extensions: []
+
+# List of Extra Features to enable
+keycloak_enabled_features: []
+
+# List of Features to disable
+keycloak_disabled_features: []
