@@ -16,6 +16,7 @@
   block:
     - name: "Run Keycloak to initialize admin user"
       become: true
+      changed_when: true
       ansible.builtin.shell:
         executable: /bin/bash
         chdir: "{{ keycloak_release_folder }}"

@@ -29,6 +29,9 @@
     community.general.ini_file:
       path: "{{ keycloak_new_config_file }}"
       no_extra_spaces: true
+      owner: "{{ keycloak_service_user }}"
+      group: "{{ keycloak_service_user }}"
+      mode: '0600'
   block:
     - name: "Ensure Keycloak config folder permissions are correct"
       ansible.builtin.file:
@@ -59,7 +62,7 @@
       when:
         - keycloak_extra_configurations is defined
         - keycloak_extra_configurations | default({}, true) | dict2items | length > 0
-      community.general.ini_file:
+      community.general.ini_file:   # noqa: args[module] risky-file-permissions
         option: "{{ config.key }}"
         value: "{{ config.value }}"
       loop: "{{ keycloak_extra_configurations | dict2items }}"

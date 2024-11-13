@@ -1,53 +1,53 @@
 ---
 - name: "Define Keycloak Database vendor"
-  community.general.ini_file:
+  community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db
     value: "{{ keycloak_database_vendor }}"
 
 - name: "Define Keycloak Database vendor"
   when: keycloak_database_host is defined
-  community.general.ini_file:
+  community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-url-host
     value: "{{ keycloak_database_host }}"
 
 - name: "Define Keycloak Database vendor"
   when: keycloak_database_name is defined
-  community.general.ini_file:
+  community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-url-database
     value: "{{ keycloak_database_name }}"
 
 - name: "Define Keycloak Database vendor"
   when: keycloak_database_user is defined
-  community.general.ini_file:
+  community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-username
     value: "{{ keycloak_database_user }}"
 
 - name: "Define Keycloak Database vendor"
   when: keycloak_database_password is defined
-  community.general.ini_file:
+  community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-password
     value: "{{ keycloak_database_password }}"
 
 - name: "Define Keycloak Database Schema"
   when: keycloak_database_schema is defined
-  community.general.ini_file:
+  community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-schema
     value: "{{ keycloak_database_schema }}"
 
 - name: "Define Keycloak Database Port"
   when: keycloak_database_port is defined
-  community.general.ini_file:
+  community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-url-port
     value: "{{ keycloak_database_port }}"
 
 - name: "Define Keycloak Database Extra Properties"
   when: keycloak_database_properties is defined
-  community.general.ini_file:
+  community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-url-properties
     value: ";{{ keycloak_database_properties }}"
 
 - name: "Enable/Disable Keycloak Database XA Transaction"
   when: keycloak_database_xa_transaction_enabled is defined
-  community.general.ini_file:
+  community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: transaction-xa-enabled
     value: "{{ keycloak_database_xa_transaction_enabled }}"
