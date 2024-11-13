@@ -39,3 +39,6 @@ keycloak_enabled_features: []
 
 # List of Features to disable
 keycloak_disabled_features: []
+
+# List of extra configuration properties
+keycloak_extra_configurations: {}

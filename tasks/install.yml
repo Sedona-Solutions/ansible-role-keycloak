@@ -46,9 +46,43 @@
       become: true
       become_user: keycloak
 
+    - name: "Duplicate original configuration file"
+      become: true
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}/conf/keycloak.conf"
+        dest: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}/conf/keycloak.conf.original"
+        owner: "{{ keycloak_service_user }}"
+        group: "{{ keycloak_service_user }}"
+        mode: '0600'
+        force: false
+    - name: "Duplicate original configuration file"
+      become: true
+      ansible.builtin.copy:
+        content: |
+          ### Generated file
+        dest: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}/conf/keycloak.conf"
+        owner: "{{ keycloak_service_user }}"
+        group: "{{ keycloak_service_user }}"
+        mode: '0600'
+        force: true
+
   rescue:
     - name: Cleanup folder to allow new installation
       ansible.builtin.file:
         path: release_folder.stat.path
         state: absent
       become: true
+
+- name: Set Keycloak release folder
+  ansible.builtin.set_fact:
+    keycloak_release_folder: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}"
+
+- name: Set Keycloak config folder
+  ansible.builtin.set_fact:
+    keycloak_config_folder: "{{ keycloak_release_folder }}/conf"
+    keycloak_config_file: "{{ keycloak_release_folder }}/conf/keycloak.conf"
+
+- name: Set Keycloak providers folder
+  ansible.builtin.set_fact:
+    keycloak_providers_folder: "{{ keycloak_release_folder }}/providers"

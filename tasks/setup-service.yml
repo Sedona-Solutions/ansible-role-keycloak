@@ -1,0 +1,65 @@
+---
+- name: "Set initialization command"
+  ansible.builtin.set_fact:
+    keycloak_initialization_command: >
+      {{ keycloak_release_folder }}/bin/kc.sh
+      start
+      --hostname=localhost
+      --http-enabled=true
+      --log=console
+      --log-level=INFO
+
+- name: "Initialize keycloak"
+  become: true
+  become_user: root
+  when: (not keycloak_initialized) or keycloak_force_init
+  block:
+    - name: "Run Keycloak to initialize admin user"
+      become: true
+      ansible.builtin.shell:
+        executable: /bin/bash
+        chdir: "{{ keycloak_release_folder }}"
+        cmd: |
+          export JAVA_OPTS_APPEND="-Dkc.launch.mode=test"
+          export KEYCLOAK_ADMIN="{{ keycloak_admin_username }}";
+          export KEYCLOAK_ADMIN_PASSWORD="{{ keycloak_admin_password }}";
+          su {{ keycloak_service_user }} -s /bin/bash -c '{{ keycloak_initialization_command }}'
+
+    - name: "Save initialization marker"
+      ansible.builtin.include_tasks: "tasks/configure/write-facts.yml"
+
+    - name: "Set Keycloak as initialized"
+      ansible.builtin.set_fact:
+        keycloak_initialized: true
+
+- name: "Install SystemD service definition without initialization parameters"
+  become: true
+  become_user: root
+  ansible.builtin.template:
+    src: keycloak.service.j2
+    dest: /lib/systemd/system/keycloak.service
+    mode: '0644'
+
+- name: "Ensure Keycloak is enabled"
+  become: true
+  become_user: root
+  ansible.builtin.systemd:
+    name: keycloak.service
+    enabled: true
+    daemon_reload: true
+
+- name: "Ensure Keycloak is started"
+  become: true
+  become_user: root
+  ansible.builtin.systemd:
+    name: keycloak.service
+    state: started
+
+- name: "Wait until Keycloak becomes active"
+  ansible.builtin.uri:
+    url: "http://localhost:{{ keycloak_http_port }}/health/ready"
+    validate_certs: false
+  register: keycloak_status
+  until: keycloak_status.status == 200 and keycloak_status.json.status == "UP"
+  retries: 25
+  delay: 5

@@ -9,7 +9,23 @@
   tags:
     - install
 
+- name: "Deploy extensions files"
+  when: keycloak_extensions | length > 0
+  become: true
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ keycloak_providers_folder }}"
+    owner: "{{ keycloak_service_user }}"
+    group: "{{ keycloak_service_user }}"
+    mode: "0664"
+  loop: "{{ keycloak_extensions }}"
+
 - name: "Configure Keycloak"
   ansible.builtin.include_tasks: configure.yml
+  tags:
+    - setup
+
+- name: "Setup Keycloak Service"
+  ansible.builtin.include_tasks: setup-service.yml
   tags:
     - setup

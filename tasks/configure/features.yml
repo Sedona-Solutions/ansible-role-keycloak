@@ -1,0 +1,12 @@
+---
+- name: Define enabled features
+  when: keycloak_enabled_features | length > 0
+  community.general.ini_file:
+    option: features
+    value: "{{ keycloak_enabled_features | join(',') }}"
+
+- name: Define disabled features
+  when: keycloak_disabled_features | length > 0
+  community.general.ini_file:
+    option: features-disabled
+    value: "{{ keycloak_disabled_features | join(',') }}"

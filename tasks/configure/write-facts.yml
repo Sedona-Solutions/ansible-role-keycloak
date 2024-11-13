@@ -1,0 +1,69 @@
+---
+- name: Ensure local facts directory exists
+  become: true
+  ansible.builtin.file:
+    state: directory
+    path: /etc/ansible/facts.d
+    owner: root
+    group: root
+    mode: u=rwX,g=rwX,o=rX
+
+- name: Set Keycloak Version fact
+  become: true
+  community.general.ini_file:
+    dest: /etc/ansible/facts.d/keycloak.fact
+    section: general
+    option: version
+    value: "{{ keycloak_version }}"
+    mode: '0664'
+    no_extra_spaces: true
+
+- name: Set Initialization marker
+  become: true
+  community.general.ini_file:
+    dest: /etc/ansible/facts.d/keycloak.fact
+    section: general
+    option: initialized
+    value: "{{ ansible_date_time.iso8601_basic_short }}"
+    mode: '0664'
+    no_extra_spaces: true
+
+- name: Set build command fact
+  become: true
+  community.general.ini_file:
+    dest: /etc/ansible/facts.d/keycloak.fact
+    section: general
+    option: build-command
+    value: "{{ keycloak_build_command }}"
+    mode: '0664'
+    no_extra_spaces: true
+
+- name: Set instance folder fact
+  become: true
+  community.general.ini_file:
+    dest: /etc/ansible/facts.d/keycloak.fact
+    section: general
+    option: instance-folder
+    value: "{{ keycloak_release_folder }}"
+    mode: '0664'
+    no_extra_spaces: true
+
+- name: Set config folder fact
+  become: true
+  community.general.ini_file:
+    dest: /etc/ansible/facts.d/keycloak.fact
+    section: general
+    option: config-folder
+    value: "{{ keycloak_config_folder }}"
+    mode: '0664'
+    no_extra_spaces: true
+
+- name: Set config folder fact
+  become: true
+  community.general.ini_file:
+    dest: /etc/ansible/facts.d/keycloak.fact
+    section: general
+    option: providers-folder
+    value: "{{ keycloak_providers_folder }}"
+    mode: '0664'
+    no_extra_spaces: true

@@ -1,52 +1,35 @@
 ---
-- name: "Check presence of Keycloak {{ keycloak_version }}"
-  ansible.builtin.stat:
-    path: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}"
-  register: release_folder
-  become: true
-  become_user: "{{ keycloak_service_user }}"
-
-- name: Set Keycloak release folder
+- name: "Define if Keycloak as not initialized by default"
   ansible.builtin.set_fact:
-    keycloak_release_folder: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}"
-
-- name: Set Keycloak config folder
-  ansible.builtin.set_fact:
-    keycloak_config_folder: "{{ keycloak_release_folder }}/conf"
-
-- name: Set Keycloak providers folder
-  ansible.builtin.set_fact:
-    keycloak_providers_folder: "{{ keycloak_release_folder }}/providers"
-
-- name: "Check presence of init file"
-  ansible.builtin.stat:
-    path: "{{ keycloak_install_dir }}/.init_done"
-  register: init_file
+    keycloak_initialized: false
 
 - name: "Define if Keycloak has already been initialized"
+  when:
+    - ansible_local is defined
+    - "'keycloak' in ansible_local.keys()"
+    - "ansible_local['keycloak'] is not string"
+    - "'initialized' in ansible_local['keycloak']['general'].keys()"
+    - "ansible_local['keycloak']['general']['initialized'] | length > 0"
   ansible.builtin.set_fact:
-    keycloak_initialized: "{{ init_file.stat.exists }}"
+    keycloak_initialized: true
 
-- name: "Deploy extensions files"
-  become: true
-  ansible.builtin.copy:
-    src: "{{ item }}"
-    dest: "{{ keycloak_providers_folder }}"
-    owner: "{{ keycloak_service_user }}"
-    group: "{{ keycloak_service_user }}"
-    mode: "0664"
-  loop: "{{ keycloak_extensions }}"
+- name: "Define hostname to default value"
+  when: keycloak_hostname is not defined
+  ansible.builtin.set_fact:
+    keycloak_hostname: "{{ ansible_fqdn }}"
+
+- name: "Define temporary config file name"
+  ansible.builtin.set_fact:
+    keycloak_new_config_file: "{{ keycloak_config_file }}.new"
 
 - name: "Build Keycloak configuration"
-  when: release_folder.stat.exists
   become: true
   become_user: "{{ keycloak_service_user }}"
+  module_defaults:
+    community.general.ini_file:
+      path: "{{ keycloak_new_config_file }}"
+      no_extra_spaces: true
   block:
-    - name: "Define hostname to default value"
-      when: keycloak_hostname is not defined
-      ansible.builtin.set_fact:
-        keycloak_hostname: "{{ ansible_fqdn }}"
-
     - name: "Ensure Keycloak config folder permissions are correct"
       ansible.builtin.file:
         path: "{{ keycloak_config_folder }}"
@@ -54,22 +37,55 @@
         group: "{{ keycloak_service_user }}"
         mode: '0770'
 
+    - name: "Create temporary empty config file"
+      ansible.builtin.copy:
+        dest: "{{ keycloak_new_config_file }}"
+        content: |
+          ## Generated file, do not modify
+        owner: "{{ keycloak_service_user }}"
+        group: "{{ keycloak_service_user }}"
+        mode: '0600'
+
     - name: "Define Database parameters"
       ansible.builtin.include_tasks: configure/database.yml
 
     - name: "Define Network parameters"
       ansible.builtin.include_tasks: configure/network.yml
 
-    - name: "Setup TLS"
-      when: keycloak_tls_enabled
-      ansible.builtin.include_tasks: tls/tls_{{ keycloak_tls_certificate_format }}.yml
+    - name: "Define features parameters"
+      ansible.builtin.include_tasks: configure/features.yml
+
+    - name: "Define Extra Keycloak Configurations"
+      when:
+        - keycloak_extra_configurations is defined
+        - keycloak_extra_configurations | default({}, true) | dict2items | length > 0
+      community.general.ini_file:
+        option: "{{ config.key }}"
+        value: "{{ config.value }}"
+      loop: "{{ keycloak_extra_configurations | dict2items }}"
+      loop_control:
+        loop_var: config
 
     - name: "Set Keycloak build command"
       ansible.builtin.set_fact:
         keycloak_build_command: >
           bin/kc.sh build
-          --db={{ keycloak_database_vendor }}
           --cache=local
+
+    - name: "Install new config file"
+      notify: "Restart Keycloak"
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ keycloak_new_config_file }}"
+        dest: "{{ keycloak_config_file }}"
+        owner: "{{ keycloak_service_user }}"
+        group: "{{ keycloak_service_user }}"
+        mode: '0600'
+
+    - name: "Cleanup temporary config file"
+      ansible.builtin.file:
+        state: absent
+        path: "{{ keycloak_new_config_file }}"
 
     - name: "Build optimized Keycloak distribution"
       when: not keycloak_dev_mode
@@ -78,74 +94,3 @@
         chdir: "{{ keycloak_release_folder }}"
       register: build_output
       changed_when: build_output.rc != 0
-
-    - name: "Initialize keycloak"
-      become: true
-      become_user: root
-      when: (not keycloak_initialized) or keycloak_force_init
-      block:
-        - name: "Install initial SystemD service definition"
-          ansible.builtin.template:
-            src: keycloak.service.j2
-            dest: /lib/systemd/system/keycloak.service
-            mode: '0644'
-
-        - name: "Start Keycloak to init admin user"
-          ansible.builtin.systemd:
-            name: keycloak.service
-            state: restarted
-            daemon_reload: true
-
-        - name: "Wait until Keycloak becomes active"
-          ansible.builtin.uri:
-            url: "http://localhost:{{ keycloak_http_port }}/health/ready"
-            validate_certs: false
-          register: keycloak_status
-          until: keycloak_status.status == 200 and keycloak_status.json.status == "UP"
-          retries: 25
-          delay: 5
-
-        - name: "Save initialization marker"
-          become: true
-          become_user: "{{ keycloak_service_user }}"
-          ansible.builtin.copy:
-            content: |
-              {{ ansible_date_time.iso8601_basic_short }}
-            dest: "{{ keycloak_install_dir }}/.init_done"
-            mode: '0644'
-
-        - name: "Set Keycloak as initialized"
-          ansible.builtin.set_fact:
-            keycloak_initialized: true
-
-    - name: "Install SystemD service definition without initialization parameters"
-      become: true
-      become_user: root
-      ansible.builtin.template:
-        src: keycloak.service.j2
-        dest: /lib/systemd/system/keycloak.service
-        mode: '0644'
-
-    - name: "Enable Keycloak"
-      become: true
-      become_user: root
-      ansible.builtin.systemd:
-        name: keycloak.service
-        enabled: true
-        daemon_reload: true
-
-    - name: "(Re)Start Keycloak"
-      become: true
-      become_user: root
-      ansible.builtin.systemd:
-        name: keycloak.service
-        state: restarted
-
-    - name: "Wait until Keycloak becomes active"
-      ansible.builtin.uri:
-        url: "http://localhost:{{ keycloak_http_port }}/health/ready"
-        validate_certs: false
-      register: keycloak_status
-      until: keycloak_status.status == 200 and keycloak_status.json.status == "UP"
-      retries: 25
-      delay: 5

@@ -1,93 +1,53 @@
 ---
-- name: "Define Keycloak Database base parameters"
-  notify: "Restart Keycloak"
-  ansible.builtin.lineinfile:
-    path: "{{ keycloak_config_folder }}/keycloak.conf"
-    state: present
-    owner: "{{ keycloak_service_user }}"
-    group: "{{ keycloak_service_user }}"
-    mode: '0660'
-    line: "{{ item.line }}"
-    insertafter: "{{ item.insertafter }}"
-    regexp: "{{ item.regexp }}"
-  loop: "{{ db_params }}"
-  vars:
-    db_params:
-      - line: "db={{ keycloak_database_vendor }}"
-        insertafter: '#db=postgres'
-        regexp: '^db=.*'
-      - line: "db-url-host={{ keycloak_database_host }}"
-        insertafter: 'db-url-database={{ keycloak_database_host }}'
-        regexp: '^db-url-host=.*'
-      - line: "db-url-database={{ keycloak_database_name }}"
-        insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
-        regexp: '^db-url-database=.*'
-      - line: "db-username={{ keycloak_database_user }}"
-        insertafter: '#db-username=keycloak'
-        regexp: '^db-username=.*'
-      - line: "db-password={{ keycloak_database_password }}"
-        insertafter: '#db-password=password'
-        regexp: '^db-password=.*'
+- name: "Define Keycloak Database vendor"
+  community.general.ini_file:
+    option: db
+    value: "{{ keycloak_database_vendor }}"
 
+- name: "Define Keycloak Database vendor"
+  when: keycloak_database_host is defined
+  community.general.ini_file:
+    option: db-url-host
+    value: "{{ keycloak_database_host }}"
+
+- name: "Define Keycloak Database vendor"
+  when: keycloak_database_name is defined
+  community.general.ini_file:
+    option: db-url-database
+    value: "{{ keycloak_database_name }}"
+
+- name: "Define Keycloak Database vendor"
+  when: keycloak_database_user is defined
+  community.general.ini_file:
+    option: db-username
+    value: "{{ keycloak_database_user }}"
+
+- name: "Define Keycloak Database vendor"
+  when: keycloak_database_password is defined
+  community.general.ini_file:
+    option: db-password
+    value: "{{ keycloak_database_password }}"
 
 - name: "Define Keycloak Database Schema"
-  notify: "Restart Keycloak"
   when: keycloak_database_schema is defined
-  ansible.builtin.lineinfile:
-    path: "{{ keycloak_config_folder }}/keycloak.conf"
-    state: present
-    owner: "{{ keycloak_service_user }}"
-    group: "{{ keycloak_service_user }}"
-    mode: '0660'
-    line: "db-schema={{ keycloak_database_schema }}"
-    insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
-    regexp: "^db-schema=.*"
+  community.general.ini_file:
+    option: db-schema
+    value: "{{ keycloak_database_schema }}"
 
 - name: "Define Keycloak Database Port"
-  notify: "Restart Keycloak"
   when: keycloak_database_port is defined
-  ansible.builtin.lineinfile:
-    path: "{{ keycloak_config_folder }}/keycloak.conf"
-    state: present
-    owner: "{{ keycloak_service_user }}"
-    group: "{{ keycloak_service_user }}"
-    mode: '0660'
-    line: "db-url-port={{ keycloak_database_port }}"
-    insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
-    regexp: "^db-url-port=.*"
+  community.general.ini_file:
+    option: db-url-port
+    value: "{{ keycloak_database_port }}"
 
 - name: "Define Keycloak Database Extra Properties"
-  notify: "Restart Keycloak"
   when: keycloak_database_properties is defined
-  ansible.builtin.lineinfile:
-    path: "{{ keycloak_config_folder }}/keycloak.conf"
-    state: present
-    owner: "{{ keycloak_service_user }}"
-    group: "{{ keycloak_service_user }}"
-    mode: '0660'
-    line: "db-url-properties=;{{ keycloak_database_properties }}"
-    insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
-    regexp: "^db-url-properties=.*"
+  community.general.ini_file:
+    option: db-url-properties
+    value: ";{{ keycloak_database_properties }}"
 
 - name: "Enable/Disable Keycloak Database XA Transaction"
-  notify: "Restart Keycloak"
   when: keycloak_database_xa_transaction_enabled is defined
-  ansible.builtin.lineinfile:
-    path: "{{ keycloak_config_folder }}/keycloak.conf"
-    state: present
-    owner: "{{ keycloak_service_user }}"
-    group: "{{ keycloak_service_user }}"
-    mode: '0660'
-    line: "transaction-xa-enabled={{ keycloak_database_xa_transaction_enabled }}"
-    insertafter: '#db-url=jdbc:postgresql://localhost/keycloak'
-    regexp: "^transaction-xa-enabled=.*"
-
-- name: "Enable database XA transaction support (default)"
-  when: keycloak_database_xa_transaction_enabled is not defined or keycloak_database_xa_transaction_enabled
-  ansible.builtin.lineinfile:
-    path: "{{ keycloak_config_folder }}/keycloak.conf"
-    state: absent
-    owner: "{{ keycloak_service_user }}"
-    group: "{{ keycloak_service_user }}"
-    mode: '0660'
-    regexp: "^transaction-xa-enabled=.*"
+  community.general.ini_file:
+    option: transaction-xa-enabled
+    value: "{{ keycloak_database_xa_transaction_enabled }}"
