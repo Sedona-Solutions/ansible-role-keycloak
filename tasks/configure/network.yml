@@ -20,13 +20,13 @@
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: "{{ item.option }}"
     value: "{{ item.value }}"
-    loop:
-      - option: proxy
-        value: "{{ keycloak_proxy_mode }}"
-      - option: hostname-strict
-        value: "false"
-      - option: hostname-strict-backchannel
-        value: "false"
+  loop:
+    - option: proxy
+      value: "{{ keycloak_proxy_mode }}"
+    - option: hostname-strict
+      value: "false"
+    - option: hostname-strict-backchannel
+      value: "false"
 
 - name: "Enable Health endpoint"
   when: keycloak_health_enabled is defined and keycloak_health_enabled
