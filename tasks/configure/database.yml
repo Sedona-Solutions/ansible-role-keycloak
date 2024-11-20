@@ -4,25 +4,25 @@
     option: db
     value: "{{ keycloak_database_vendor }}"
 
-- name: "Define Keycloak Database vendor"
+- name: "Define Keycloak Database host"
   when: keycloak_database_host is defined
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-url-host
     value: "{{ keycloak_database_host }}"
 
-- name: "Define Keycloak Database vendor"
+- name: "Define Keycloak Database name"
   when: keycloak_database_name is defined
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-url-database
     value: "{{ keycloak_database_name }}"
 
-- name: "Define Keycloak Database vendor"
+- name: "Define Keycloak Database user"
   when: keycloak_database_user is defined
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-username
     value: "{{ keycloak_database_user }}"
 
-- name: "Define Keycloak Database vendor"
+- name: "Define Keycloak Database password"
   when: keycloak_database_password is defined
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: db-password
@@ -50,4 +50,4 @@
   when: keycloak_database_xa_transaction_enabled is defined
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: transaction-xa-enabled
-    value: "{{ keycloak_database_xa_transaction_enabled }}"
+    value: "{{ keycloak_database_xa_transaction_enabled | ternary('true', 'false') }}"
