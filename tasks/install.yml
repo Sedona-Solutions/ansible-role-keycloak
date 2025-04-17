@@ -44,7 +44,22 @@
         dest: "{{ keycloak_install_dir }}"
         remote_src: true
       become: true
-      become_user: keycloak
+      become_user: "{{ keycloak_service_user }}"
+
+    - name: "List executable files"
+      register: keycloak_executable_files
+      ansible.builtin.find:
+        paths: "{{ keycloak_release_folder }}/bin"
+        file_type: file
+        patterns: '*.sh'
+
+    - name: "Set executable script files"
+      become: true
+      ansible.builtin.file:
+        path: "{{ item }}"
+        mode: 'a+x'
+      with_items:
+        - "{{ keycloak_executable_files.files | map(attribute='path') | list }}"
 
     - name: "Duplicate original configuration file"
       become: true

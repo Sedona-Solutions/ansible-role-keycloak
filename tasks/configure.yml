@@ -73,7 +73,6 @@
       ansible.builtin.set_fact:
         keycloak_build_command: >
           bin/kc.sh build
-          --cache=local
 
     - name: "Install new config file"
       notify: "Restart Keycloak"
