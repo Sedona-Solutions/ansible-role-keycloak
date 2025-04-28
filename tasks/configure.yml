@@ -69,11 +69,6 @@
       loop_control:
         loop_var: config
 
-    - name: "Set Keycloak build command"
-      ansible.builtin.set_fact:
-        keycloak_build_command: >
-          bin/kc.sh build
-
     - name: "Install new config file"
       notify: "Restart Keycloak"
       ansible.builtin.copy:

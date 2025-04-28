@@ -16,6 +16,7 @@
   when: (not keycloak_initialized) or keycloak_force_init
   block:
     - name: "Run Keycloak to initialize admin user"
+      register: initializer_sol
       become: true
       changed_when: true
       ansible.builtin.shell:
@@ -33,6 +34,8 @@
     - name: "Set Keycloak as initialized"
       ansible.builtin.set_fact:
         keycloak_initialized: true
+  rescue:
+    initializer_sol > /var/log/initialization_keycloak_log.out
 
 - name: "Install SystemD service definition without initialization parameters"
   become: true
@@ -59,7 +62,7 @@
 
 - name: "Wait until Keycloak becomes active"
   ansible.builtin.uri:
-    url: "http://localhost:{{ keycloak_http_port }}/health/ready"
+    url: "http://localhost:{{ keycloak_management_port }}/health/ready"
     validate_certs: false
   register: keycloak_status
   until: keycloak_status.status == 200 and keycloak_status.json.status == "UP"

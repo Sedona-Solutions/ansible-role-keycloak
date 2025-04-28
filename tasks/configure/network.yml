@@ -7,13 +7,13 @@
 - name: "Define main hostname"
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: hostname
-    value: "https://{{ keycloak_hostname }}"
+    value: "{{ keycloak_protocol }}://{{ keycloak_hostname }}"
 
 - name: "Define admin hostname"
   when: keycloak_admin_hostname is defined
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: hostname-admin
-    value: "https://{{ keycloak_admin_hostname }}"
+    value: "{{ keycloak_protocol }}://{{ keycloak_admin_hostname }}"
 
 - name: "Set proxy mode"
   when: keycloak_proxy_mode is defined
@@ -24,9 +24,13 @@
     - option: proxy-headers
       value: "{{ keycloak_proxy_mode }}"
     - option: http-enabled
-      value: "true"
+      value: "{{ keycloak_http_enabled | ternary('true', 'false') }}"
+    - option: hostname-backchannel-dynamic
+      value: "{{ keycloak_hostname_backchannel_dynamic | ternary('true', 'false') }}"
+    - option: hostname-debug
+      value: "{{ keycloak_hostname_debug | ternary('true', 'false') }}"
     - option: hostname-strict
-      value: "false"
+      value: "{{ keycloak_hostname_strict | ternary('true', 'false') }}"
 
 - name: "Enable Health endpoint"
   when: keycloak_health_enabled is defined and keycloak_health_enabled
