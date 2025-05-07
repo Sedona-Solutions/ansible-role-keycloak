@@ -35,7 +35,10 @@
       ansible.builtin.set_fact:
         keycloak_initialized: true
   rescue:
-    initializer_sol > /var/log/initialization_keycloak_log.out
+    - name: "Log errors during keycloak initialization failure"
+      ansible.builtin.copy:
+        content: "{{ initializer_sol }}"
+        dest: "/var/log/initialization_keycloak_log_{{ now(utc=true,fmt='%Y-%m-%d-%H-%M-%S') }}.out"
 
 - name: "Install SystemD service definition without initialization parameters"
   become: true
