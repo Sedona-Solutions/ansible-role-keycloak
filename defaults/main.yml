@@ -19,9 +19,9 @@ keycloak_database_xa_transaction_enabled: true
 # HTTP & HTTPS Port (https://www.keycloak.org/server/all-config#_httptls)
 keycloak_protocol: https
 keycloak_management_port: 9000
-keycloak_http_port: 8080
 keycloak_https_port: 8443
 keycloak_http_enabled: false
+keycloak_http_port: 8080
 # hostname.v2 (https://www.keycloak.org/server/all-config#category-hostname_v2)
 keycloak_hostname_backchannel_dynamic: false
 keycloak_hostname_debug: false

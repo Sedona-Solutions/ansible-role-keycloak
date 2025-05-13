@@ -40,15 +40,6 @@
         group: "{{ keycloak_service_user }}"
         mode: '0770'
 
-    - name: "Create temporary empty config file"
-      ansible.builtin.copy:
-        dest: "{{ keycloak_new_config_file }}"
-        content: |
-          ## Generated file, do not modify
-        owner: "{{ keycloak_service_user }}"
-        group: "{{ keycloak_service_user }}"
-        mode: '0600'
-
     - name: "Define Database parameters"
       ansible.builtin.include_tasks: configure/database.yml
 
@@ -64,10 +55,22 @@
         - keycloak_extra_configurations | default({}, true) | dict2items | length > 0
       community.general.ini_file:   # noqa: args[module] risky-file-permissions
         option: "{{ config.key }}"
-        value: "{{ config.value }}"
+        value: "{{ config.value | ternary('true', 'false') if config.value == config.value|bool else config.value }}"
       loop: "{{ keycloak_extra_configurations | dict2items }}"
       loop_control:
         loop_var: config
+
+    - name: "Define previous config file name"
+      ansible.builtin.set_fact:
+        keycloak_previous_config_file: "{{ keycloak_config_file }}.previous"
+    - name: "Backup previous config file"
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ keycloak_config_file }}"
+        dest: "{{ keycloak_previous_config_file }}"
+        owner: "{{ keycloak_service_user }}"
+        group: "{{ keycloak_service_user }}"
+        mode: '0600'
 
     - name: "Install new config file"
       notify: "Restart Keycloak"
@@ -78,12 +81,6 @@
         owner: "{{ keycloak_service_user }}"
         group: "{{ keycloak_service_user }}"
         mode: '0600'
-
-    - name: "Cleanup temporary config file"
-      ansible.builtin.file:
-        state: absent
-        path: "{{ keycloak_new_config_file }}"
-
     - name: "Build optimized Keycloak distribution"
       when: not keycloak_dev_mode
       ansible.builtin.command: "{{ keycloak_build_command }}"
@@ -91,3 +88,23 @@
         chdir: "{{ keycloak_release_folder }}"
       register: build_output
       changed_when: build_output.rc != 0
+
+  rescue:
+    - name: "Restore previous config file"
+      when: keycloak_previous_config_file is defined
+      notify: "Restart Keycloak"
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ keycloak_previous_config_file }}"
+        dest: "{{ keycloak_config_file }}"
+        owner: "{{ keycloak_service_user }}"
+        group: "{{ keycloak_service_user }}"
+        mode: '0600'
+    - name: "Configuration keycloak fails"
+      ansible.builtin.fails:
+        msg: "Configuration keycloak fails with file : {{ keycloak_new_config_file }}"
+
+- name: "Cleanup temporary config file"
+  ansible.builtin.file:
+    state: absent
+    path: "{{ keycloak_new_config_file }}"

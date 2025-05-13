@@ -1,39 +1,29 @@
 ---
-- name: "Defaults admin hostname to Keycloak frontend hostname"
-  when: keycloak_admin_hostname is not defined
+- name: "Check proxy-headers value"
+  ansible.builtin.assert:
+    that:
+      - keycloak_proxy_headers in ['forwarded', 'xforwarded']
+    fail_msg: "'keycloak_proxy_headers' should be either 'forwarded' or 'xforwarded'"
+
+- name: "Set default variables for keycloak config"
   ansible.builtin.set_fact:
-    keycloak_admin_hostname: "{{ keycloak_hostname }}"
+    default_config_vars:
+      - option: hostname
+        value: "{{ keycloak_protocol }}://{{ keycloak_hostname }}"
+      - option: hostname-admin
+        value: "{{ keycloak_protocol }}://{{ keycloak_admin_hostname | default(keycloak_hostname) }}"
+      - option: proxy-headers
+        value: "{{ keycloak_proxy_headers }}"
+      - option: http-enabled
+        value: "{{ keycloak_http_enabled }}"
+      - option: health-enabled
+        value: "{{ keycloak_health_enabled | default(False) }}"
 
-- name: "Define main hostname"
+- name: "Define network config options in conf file"
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
-    option: hostname
-    value: "{{ keycloak_protocol }}://{{ keycloak_hostname }}"
-
-- name: "Define admin hostname"
-  when: keycloak_admin_hostname is defined
-  community.general.ini_file:  # noqa: args[module] risky-file-permissions
-    option: hostname-admin
-    value: "{{ keycloak_protocol }}://{{ keycloak_admin_hostname }}"
-
-- name: "Set proxy mode"
-  when: keycloak_proxy_mode is defined
-  community.general.ini_file:  # noqa: args[module] risky-file-permissions
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-  loop:
-    - option: proxy-headers
-      value: "{{ keycloak_proxy_mode }}"
-    - option: http-enabled
-      value: "{{ keycloak_http_enabled | ternary('true', 'false') }}"
-    - option: hostname-backchannel-dynamic
-      value: "{{ keycloak_hostname_backchannel_dynamic | ternary('true', 'false') }}"
-    - option: hostname-debug
-      value: "{{ keycloak_hostname_debug | ternary('true', 'false') }}"
-    - option: hostname-strict
-      value: "{{ keycloak_hostname_strict | ternary('true', 'false') }}"
-
-- name: "Enable Health endpoint"
-  when: keycloak_health_enabled is defined and keycloak_health_enabled
-  community.general.ini_file:  # noqa: args[module] risky-file-permissions
-    option: health-enabled
-    value: "{{ keycloak_health_enabled | ternary('true', 'false') }}"
+    option: "{{ option }}"
+    value: "{{ value }}"
+    vars:
+      option: "{{ item.key | default(item.option) }}"
+      value: "{{ item.value | ternary('true', 'false') if item.value == item.value|bool else item.value }}"
+    loop: "{{ default_config_vars | default({}, true) | dict2items }}"

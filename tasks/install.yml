@@ -46,21 +46,6 @@
       become: true
       become_user: "{{ keycloak_service_user }}"
 
-    - name: "List executable files"
-      register: keycloak_executable_files
-      ansible.builtin.find:
-        paths: "{{ keycloak_release_folder }}/bin"
-        file_type: file
-        patterns: '*.sh'
-
-    - name: "Set executable script files"
-      become: true
-      ansible.builtin.file:
-        path: "{{ item }}"
-        mode: 'a+x'
-      with_items:
-        - "{{ keycloak_executable_files.files | map(attribute='path') | list }}"
-
     - name: "Duplicate original configuration file"
       become: true
       ansible.builtin.copy:
@@ -71,16 +56,6 @@
         group: "{{ keycloak_service_user }}"
         mode: '0600'
         force: false
-    - name: "Duplicate original configuration file"
-      become: true
-      ansible.builtin.copy:
-        content: |
-          ### Generated file
-        dest: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}/conf/keycloak.conf"
-        owner: "{{ keycloak_service_user }}"
-        group: "{{ keycloak_service_user }}"
-        mode: '0600'
-        force: true
 
   rescue:
     - name: Cleanup folder to allow new installation
@@ -88,6 +63,24 @@
         path: release_folder.stat.path
         state: absent
       become: true
+    - name: "Installation fails"
+      ansible.builtin.fail:
+        msg: "Download and install Keycloak {{ keycloak_version }} fail"
+
+- name: "List executable files"
+  register: keycloak_executable_files
+  ansible.builtin.find:
+    paths: "{{ keycloak_release_folder }}/bin"
+    file_type: file
+    patterns: '*.sh'
+
+- name: "Set executable script files"
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: 'a+x'
+  with_items:
+    - "{{ keycloak_executable_files.files | map(attribute='path') | list }}"
 
 - name: Set Keycloak release folder
   ansible.builtin.set_fact:
