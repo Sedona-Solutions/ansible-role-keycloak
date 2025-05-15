@@ -55,7 +55,7 @@
         - keycloak_extra_configurations | default({}, true) | dict2items | length > 0
       community.general.ini_file:   # noqa: args[module] risky-file-permissions
         option: "{{ config.key }}"
-        value: "{{ config.value | ternary('true', 'false') if config.value == config.value|bool else config.value }}"
+        value: "{{ config.value | ternary('true', 'false') if config.value == config.value | bool else config.value }}"
       loop: "{{ keycloak_extra_configurations | dict2items }}"
       loop_control:
         loop_var: config

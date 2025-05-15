@@ -37,11 +37,14 @@
   rescue:
     - name: "Define logs file path"
       ansible.builtin.set_fact:
-        initialization_logs_path: "/var/log/initialization_keycloak_log_{{ now(utc=true,fmt='%Y-%m-%d-%H-%M-%S') }}.out"
+        initialization_logs_path: "/var/log/initialization_keycloak_log_{{ now(utc=true, fmt='%Y-%m-%d-%H-%M-%S') }}.out"
     - name: "Log errors during keycloak initialization failure"
       ansible.builtin.copy:
         content: "{{ initialization_logs }}"
         dest: "{{ initialization_logs_path }}"
+        owner: "{{ keycloak_service_user }}"
+        group: "{{ keycloak_service_user }}"
+        mode: "0640"
     - name: "Force fails"
       ansible.builtin.fail:
         msg: "Logs keycloak initializer failed in file : {{ initialization_logs_path }}"

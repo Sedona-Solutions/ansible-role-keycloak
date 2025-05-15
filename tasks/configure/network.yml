@@ -1,29 +1,44 @@
 ---
 - name: "Check proxy-headers value"
+  when: keycloak_proxy_headers is defined
   ansible.builtin.assert:
     that:
       - keycloak_proxy_headers in ['forwarded', 'xforwarded']
-    fail_msg: "'keycloak_proxy_headers' should be either 'forwarded' or 'xforwarded'"
+      - keycloak_proxy_trusted_addresses is defined
+    fail_msg: "'keycloak_proxy_headers' should be either 'forwarded' or 'xforwarded' and keycloak_proxy_trusted_addresses must be defined"
 
-- name: "Set default variables for keycloak config"
+- name: "Set proxy variables for keycloak config"
+  when: keycloak_proxy_headers is defined
   ansible.builtin.set_fact:
-    default_config_vars:
+    proxy_config_vars:
+      - option: proxy-headers
+        value: "{{ keycloak_proxy_headers }}"
+      - option: proxy-trusted-addresses
+        value: "{{ keycloak_proxy_trusted_addresses }}"
+
+- name: "Set hostname variables for keycloak config"
+  ansible.builtin.set_fact:
+    hostname_config_vars:
       - option: hostname
         value: "{{ keycloak_protocol }}://{{ keycloak_hostname }}"
       - option: hostname-admin
         value: "{{ keycloak_protocol }}://{{ keycloak_admin_hostname | default(keycloak_hostname) }}"
-      - option: proxy-headers
-        value: "{{ keycloak_proxy_headers }}"
+
+- name: "Set http variables for keycloak config"
+  ansible.builtin.set_fact:
+    http_config_vars:
       - option: http-enabled
         value: "{{ keycloak_http_enabled }}"
+
+- name: "Set health variables for keycloak config"
+  ansible.builtin.set_fact:
+    health_config_vars:
       - option: health-enabled
         value: "{{ keycloak_health_enabled | default(False) }}"
 
 - name: "Define network config options in conf file"
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
-    option: "{{ option }}"
-    value: "{{ value }}"
-    vars:
-      option: "{{ item.key | default(item.option) }}"
-      value: "{{ item.value | ternary('true', 'false') if item.value == item.value|bool else item.value }}"
-    loop: "{{ default_config_vars | default({}, true) | dict2items }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value | ternary('true', 'false') if item.value == item.value | bool else item.value }}"
+    loop: >
+      {{ hostname_config_vars + http_config_vars + health_config_vars + proxy_config_vars | default({}, true) }}

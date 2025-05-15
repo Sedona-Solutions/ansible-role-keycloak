@@ -87,10 +87,14 @@ Settings for the network to use with Keycloak.
     keycloak_hostname_backchannel_dynamic: false
     keycloak_hostname_debug: false
     keycloak_hostname_strict: false
-# Proxy [Keycloak documentation](https://www.keycloak.org/server/all-config#category-proxy)
-    keycloak_proxy_headers: forwarded
 
 Other configuration options can be added with list variables
+
+# Proxy [Keycloak documentation](https://www.keycloak.org/server/all-config#category-proxy)
+    #variable for proxy_headers option (optional)
+    keycloak_proxy_headers: forwarded
+    keycloak_proxy_trusted_addresses: 127.0.0.1
+
 
     # List of extra configuration properties
     keycloak_extra_configurations: {}
@@ -125,7 +129,6 @@ Example Playbook
         keycloak_database_user: db_user
         keycloak_database_password: db_password
         keycloak_database_name: keycloak_db
-        keycloak_proxy_headers: forwarded
 ```
 
 License
