@@ -4,7 +4,8 @@
     keycloak_initialization_command: >
       {{ keycloak_release_folder }}/bin/kc.sh
       start
-      --hostname=localhost
+      --hostname=http://localhost
+      --hostname-admin=http://localhost
       --http-enabled=true
       --log=console
       --log-level=INFO
@@ -15,6 +16,7 @@
   when: (not keycloak_initialized) or keycloak_force_init
   block:
     - name: "Run Keycloak to initialize admin user"
+      register: initialization_logs
       become: true
       changed_when: true
       ansible.builtin.shell:
@@ -22,8 +24,8 @@
         chdir: "{{ keycloak_release_folder }}"
         cmd: |
           export JAVA_OPTS_APPEND="-Dkc.launch.mode=test"
-          export KEYCLOAK_ADMIN="{{ keycloak_admin_username }}";
-          export KEYCLOAK_ADMIN_PASSWORD="{{ keycloak_admin_password }}";
+          export KC_BOOTSTRAP_ADMIN_USERNAME="{{ keycloak_admin_username }}";
+          export KC_BOOTSTRAP_ADMIN_PASSWORD="{{ keycloak_admin_password }}";
           su {{ keycloak_service_user }} -s /bin/bash -c '{{ keycloak_initialization_command }}'
 
     - name: "Save initialization marker"
@@ -32,8 +34,22 @@
     - name: "Set Keycloak as initialized"
       ansible.builtin.set_fact:
         keycloak_initialized: true
+  rescue:
+    - name: "Define logs file path"
+      ansible.builtin.set_fact:
+        initialization_logs_path: "/var/log/initialization_keycloak_log_{{ now(utc=true, fmt='%Y-%m-%d-%H-%M-%S') }}.out"
+    - name: "Log errors during keycloak initialization failure"
+      ansible.builtin.copy:
+        content: "{{ initialization_logs }}"
+        dest: "{{ initialization_logs_path }}"
+        owner: "{{ keycloak_service_user }}"
+        group: "{{ keycloak_service_user }}"
+        mode: "0640"
+    - name: "Force fails"
+      ansible.builtin.fail:
+        msg: "Logs keycloak initializer failed in file : {{ initialization_logs_path }}"
 
-- name: "Install SystemD service definition without initialization parameters"
+- name: "Install SystemD service definition"
   become: true
   become_user: root
   ansible.builtin.template:
@@ -58,8 +74,7 @@
 
 - name: "Wait until Keycloak becomes active"
   ansible.builtin.uri:
-    url: "http://localhost:{{ keycloak_http_port }}/health/ready"
-    validate_certs: false
+    url: "http://localhost:{{ keycloak_management_port }}/health/ready"
   register: keycloak_status
   until: keycloak_status.status == 200 and keycloak_status.json.status == "UP"
   retries: 25

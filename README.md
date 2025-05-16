@@ -20,7 +20,7 @@ Role Variables
 
 Available variables are listed below, along with default values (see `defaults/main.yml`):
 
-    keycloak_version: 20.0.2
+    keycloak_version: 26.2.0
 
 The version of Keycloak to install on the system. If not defined, we try to find the latest release on GitHub API.
 
@@ -76,6 +76,29 @@ Settings for the database to use with Keycloak. See [Keycloak documentation](htt
     keycloak_database_port: 1234
     keycloak_database_properties: "myProperty1=value1;otherProperty=value2"
 
+Settings for the network to use with Keycloak.
+# HTTP & HTTPS Port [Keycloak documentation](https://www.keycloak.org/server/all-config#_httptls)
+    keycloak_protocol: https
+    keycloak_management_port: 9000
+    keycloak_https_port: 8443
+    keycloak_http_enabled: false
+    keycloak_http_port: 8080
+# hostname.v2 [Keycloak documentation](https://www.keycloak.org/server/all-config#category-hostname_v2)
+    keycloak_hostname_backchannel_dynamic: false
+    keycloak_hostname_debug: false
+    keycloak_hostname_strict: false
+
+Other configuration options can be added with list variables
+
+# Proxy [Keycloak documentation](https://www.keycloak.org/server/all-config#category-proxy)
+    #variable for proxy_headers option (optional)
+    keycloak_proxy_headers: forwarded
+    keycloak_proxy_trusted_addresses: 127.0.0.1
+
+
+    # List of extra configuration properties
+    keycloak_extra_configurations: {}
+
 Optional parameters for JDBC connection URL.
 
     keycloak_dev_mode: true
@@ -97,7 +120,7 @@ Example Playbook
   roles:
     - role: sedona_solutions.keycloak
       vars:
-        keycloak_version: 20.0.1
+        keycloak_version: 26.2.0
         keycloak_keystore_file: /etc/keycloak/keycloak.jks
         keycloak_keystore_password: changeme
         keycloak_hostname: keycloak.example.com

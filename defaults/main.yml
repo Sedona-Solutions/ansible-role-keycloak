@@ -17,8 +17,18 @@ keycloak_database_host: localhost
 keycloak_database_xa_transaction_enabled: true
 
 # HTTP & HTTPS Port (https://www.keycloak.org/server/all-config#_httptls)
-keycloak_http_port: 8080
+keycloak_protocol: https
+keycloak_management_port: 9000
 keycloak_https_port: 8443
+keycloak_http_enabled: false
+keycloak_http_port: 8080
+# hostname.v2 (https://www.keycloak.org/server/all-config#category-hostname_v2)
+keycloak_hostname_backchannel_dynamic: false
+keycloak_hostname_debug: false
+keycloak_hostname_strict: false
+
+# build command
+keycloak_build_command: bin/kc.sh build
 
 # Start keycloak in dev mode (start-dev)
 keycloak_dev_mode: true
