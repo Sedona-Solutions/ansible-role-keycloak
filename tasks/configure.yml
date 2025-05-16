@@ -101,7 +101,7 @@
         group: "{{ keycloak_service_user }}"
         mode: '0600'
     - name: "Configuration keycloak fails"
-      ansible.builtin.fails:
+      ansible.builtin.fail:
         msg: "Configuration keycloak fails with file : {{ keycloak_new_config_file }}"
 
 - name: "Cleanup temporary config file"

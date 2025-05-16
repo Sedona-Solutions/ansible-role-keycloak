@@ -40,5 +40,4 @@
   community.general.ini_file:  # noqa: args[module] risky-file-permissions
     option: "{{ item.option }}"
     value: "{{ item.value | ternary('true', 'false') if item.value == item.value | bool else item.value }}"
-    loop: >
-      {{ hostname_config_vars + http_config_vars + health_config_vars + proxy_config_vars | default({}, true) }}
+  loop: "{{ hostname_config_vars + http_config_vars + health_config_vars + proxy_config_vars | default({}, true) }}"

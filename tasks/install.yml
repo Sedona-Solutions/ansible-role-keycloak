@@ -67,6 +67,10 @@
       ansible.builtin.fail:
         msg: "Download and install Keycloak {{ keycloak_version }} fail"
 
+- name: Set Keycloak release folder
+  ansible.builtin.set_fact:
+    keycloak_release_folder: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}"
+
 - name: "List executable files"
   register: keycloak_executable_files
   ansible.builtin.find:
@@ -81,10 +85,6 @@
     mode: 'a+x'
   with_items:
     - "{{ keycloak_executable_files.files | map(attribute='path') | list }}"
-
-- name: Set Keycloak release folder
-  ansible.builtin.set_fact:
-    keycloak_release_folder: "{{ keycloak_install_dir }}/keycloak-{{ keycloak_version }}"
 
 - name: Set Keycloak config folder
   ansible.builtin.set_fact:
